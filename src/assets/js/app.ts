@@ -121,7 +121,7 @@ const STORAGE_KEYS = {
     
     // Load remove winner setting
     const savedRemoveWinner = localStorage.getItem(STORAGE_KEYS.REMOVE_WINNER);
-    const removeWinner = savedRemoveWinner !== null ? JSON.parse(savedRemoveWinner) : true;
+    const removeWinner = savedRemoveWinner !== null ? false : false;
     
     // Load sound setting
     const savedSoundEnabled = localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED);
