@@ -2,6 +2,25 @@ import confetti from 'canvas-confetti';
 import Slot from '@js/Slot';
 import SoundEffects from '@js/SoundEffects';
 
+// Default name list
+const DEFAULT_NAME_LIST = [
+  '5% discount',
+  '20% discount',
+  '25% discount',
+  '30% discount',
+  '3 months free | 1 year subscription',
+  '6 months free Performance module',
+  'All-in-one : INR 500/Month',
+  '1 year free-HRMS+PAYROLL'
+];
+
+// Local storage keys
+const STORAGE_KEYS = {
+  NAME_LIST: 'random-name-picker-name-list',
+  REMOVE_WINNER: 'random-name-picker-remove-winner',
+  SOUND_ENABLED: 'random-name-picker-sound-enabled'
+};
+
 // Initialize slot machine
 (() => {
   const drawButton = document.getElementById('draw-button') as HTMLButtonElement | null;
@@ -94,14 +113,48 @@ import SoundEffects from '@js/SoundEffects';
     settingsButton.disabled = false;
   };
 
+  /** Load settings from local storage */
+  const loadSettings = () => {
+    // Load name list
+    const savedNameList = localStorage.getItem(STORAGE_KEYS.NAME_LIST);
+    const nameList = savedNameList ? JSON.parse(savedNameList) : DEFAULT_NAME_LIST;
+    
+    // Load remove winner setting
+    const savedRemoveWinner = localStorage.getItem(STORAGE_KEYS.REMOVE_WINNER);
+    const removeWinner = savedRemoveWinner !== null ? JSON.parse(savedRemoveWinner) : true;
+    
+    // Load sound setting
+    const savedSoundEnabled = localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED);
+    const soundEnabled = savedSoundEnabled !== null ? JSON.parse(savedSoundEnabled) : true;
+    
+    return { nameList, removeWinner, soundEnabled };
+  };
+
+  /** Save settings to local storage */
+  const saveSettings = (nameList: string[], removeWinner: boolean, soundEnabled: boolean) => {
+    localStorage.setItem(STORAGE_KEYS.NAME_LIST, JSON.stringify(nameList));
+    localStorage.setItem(STORAGE_KEYS.REMOVE_WINNER, JSON.stringify(removeWinner));
+    localStorage.setItem(STORAGE_KEYS.SOUND_ENABLED, JSON.stringify(soundEnabled));
+  };
+
+  // Load settings from local storage
+  const { nameList, removeWinner, soundEnabled } = loadSettings();
+
   /** Slot instance */
   const slot = new Slot({
     reelContainerSelector: '#reel',
     maxReelItems: MAX_REEL_ITEMS,
+    removeWinner,
     onSpinStart,
     onSpinEnd,
     onNameListChanged: stopWinningAnimation
   });
+
+  // Set initial name list
+  slot.names = nameList;
+  
+  // Set initial sound state
+  soundEffects.mute = !soundEnabled;
 
   /** To open the setting page */
   const onSettingsOpen = () => {
@@ -151,11 +204,17 @@ import SoundEffects from '@js/SoundEffects';
 
   // Click handler for "Save" button for setting page
   settingsSaveButton.addEventListener('click', () => {
-    slot.names = nameListTextArea.value
+    const newNameList = nameListTextArea.value
       ? nameListTextArea.value.split(/\n/).filter((name) => Boolean(name.trim()))
       : [];
+    
+    slot.names = newNameList;
     slot.shouldRemoveWinnerFromNameList = removeNameFromListCheckbox.checked;
     soundEffects.mute = !enableSoundCheckbox.checked;
+    
+    // Save settings to local storage
+    saveSettings(newNameList, removeNameFromListCheckbox.checked, enableSoundCheckbox.checked);
+    
     onSettingsClose();
   });
 
